@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/cart_items.dart'; // Replace with your actual file path
+import '../models/cart_items.dart';
 
 class CartProvider with ChangeNotifier {
   final List<CartItem> _items = [];
