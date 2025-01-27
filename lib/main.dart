@@ -15,7 +15,7 @@ void main() async {
       providers: [
         ChangeNotifierProvider(create: (_) => CartProvider()),
       ],
-      child: MyApp(),
+      child: MainApp(),
     ),
   );
 }
