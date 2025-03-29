@@ -23,9 +23,10 @@ class _SearchBarPageState extends State<SearchBarPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   String searchQuery = "";
   List<Map<String, dynamic>> searchResults = [];
+  List<String> selectedCategories = [];
 
-  Future<void> searchFoodItems(String query) async {
-    if (query.isEmpty) {
+  Future<void> searchFoodItems(String query, {List<String>? categories}) async {
+    if (query.isEmpty && (categories == null || categories.isEmpty)) {
       setState(() {
         searchResults = [];
       });
@@ -50,6 +51,12 @@ class _SearchBarPageState extends State<SearchBarPage> {
         ...categoryQuery.docs.map((doc) => doc.data() as Map<String, dynamic>),
       ];
 
+      if (categories != null && categories.isNotEmpty) {
+        combinedResults = combinedResults
+            .where((item) => categories.contains(item['category']))
+            .toList();
+      }
+
       Map<String, Map<String, dynamic>> uniqueResults = {};
       for (var item in combinedResults) {
         uniqueResults[item['id']] = item;
@@ -62,7 +69,6 @@ class _SearchBarPageState extends State<SearchBarPage> {
       print("Error fetching search results: $e");
     }
   }
-
   Future<Map<String, dynamic>?> fetchUserDetails() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
@@ -81,6 +87,113 @@ class _SearchBarPageState extends State<SearchBarPage> {
     }
     return null;
   }
+  void _applyFilter(List<String> selectedCategories) {
+    searchFoodItems(searchQuery, categories: selectedCategories);
+  }
+
+  void _showFilterDialog(BuildContext context) {
+  final List<String> categories = [
+    'sandwich', 'frankie', 'main course', 'chinese',
+    'south indian', 'breakfast', 'snacks', 'beverages'
+  ];
+
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    ),
+    builder: (BuildContext context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Title
+                Text(
+                  "Filter by Category",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                ),
+                const Divider(),
+                
+                // Category Chips
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: categories.map((category) {
+                    bool isSelected = selectedCategories.contains(category);
+                    return FilterChip(
+                      label: Text(category),
+                      labelStyle: TextStyle(
+                        color: isSelected ? Colors.white : Colors.black87,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      selected: isSelected,
+                      selectedColor: Colors.amber,
+                      backgroundColor: Colors.grey.shade200,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      onSelected: (bool selected) {
+                        setState(() {
+                          selected
+                              ? selectedCategories.add(category)
+                              : selectedCategories.remove(category);
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
+                
+                const SizedBox(height: 20),
+                
+                // Action Buttons
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Cancel Button
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.black54,
+                      ),
+                      child: const Text("Cancel"),
+                    ),
+                    
+                    // Apply Button
+                    ElevatedButton(
+                      onPressed: () {
+                        _applyFilter(selectedCategories);
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        foregroundColor: Colors.amber,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      child: const Text("Apply"),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+              ],
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -92,23 +205,36 @@ class _SearchBarPageState extends State<SearchBarPage> {
           children: [
             Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Material(
-                elevation: 8,
-                borderRadius: BorderRadius.circular(30),
-                child: TextField(
-                  decoration: InputDecoration(
-                    hintText: 'Search food items...',
-                    prefixIcon: Icon(Icons.search, color: Colors.black),
-                    border: InputBorder.none,
-                    contentPadding: EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Material(
+                      elevation: 8,
+                      borderRadius: BorderRadius.circular(30),
+                      child: TextField(
+                        decoration: InputDecoration(
+                          hintText: 'Search food items...',
+                          prefixIcon: Icon(Icons.search, color: Colors.black),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.all(20),
+                        ),
+                        onChanged: (query) {
+                          setState(() {
+                            searchQuery = query;
+                          });
+                          searchFoodItems(query.toLowerCase());
+                        },
+                      ),
+                    ),
                   ),
-                  onChanged: (query) {
-                    setState(() {
-                      searchQuery = query;
-                    });
-                    searchFoodItems(query.toLowerCase());
-                  },
-                ),
+                  SizedBox(width: 10),
+                  IconButton(
+                    icon: Icon(Icons.filter_list, color: Colors.black),
+                    onPressed: () {
+                      _showFilterDialog(context);
+                    },
+                  ),
+                ],
               ),
             ),
             searchResults.isEmpty
@@ -136,6 +262,7 @@ class _SearchBarPageState extends State<SearchBarPage> {
                       itemCount: searchResults.length,
                       itemBuilder: (context, index) {
                         final item = searchResults[index];
+                        final isAvailable = item['available'] ?? true;
                         return FadeIn(
                           child: Card(
                             margin: const EdgeInsets.symmetric(
@@ -148,11 +275,13 @@ class _SearchBarPageState extends State<SearchBarPage> {
                               leading: ClipRRect(
                                 borderRadius: BorderRadius.circular(10),
                                 child: Image.network(
-                                  item['url'] ??
-                                      'https://via.placeholder.com/80',
+                                  item['url'],
                                   width: 60,
                                   height: 60,
                                   fit: BoxFit.cover,
+                                  color: isAvailable ? null : Colors.grey,
+                                  colorBlendMode:
+                                      isAvailable ? null : BlendMode.saturation,
                                 ),
                               ),
                               title: Text(
@@ -171,23 +300,8 @@ class _SearchBarPageState extends State<SearchBarPage> {
                                 ),
                               ),
                               onTap: () {
-                                // final cartProvider = Provider.of<CartProvider>(
-                                //     context,
-                                //     listen: false);
-                                // cartProvider.addItem(
-                                //   CartItem(
-                                //     name: item['name'],
-                                //     price: item['price'],
-                                //   ),
-                                // );
-                                // ScaffoldMessenger.of(context).showSnackBar(
-                                //   SnackBar(
-                                //     content:
-                                //         Text('${item['name']} added to cart'),
-                                //     duration: Duration(seconds: 1),
-                                //   ),
-                                // );
-                                showFoodDetailsBottomSheet(context, item);
+                                showFoodDetailsBottomSheet(
+                                    context, item, isAvailable);
                               },
                             ),
                           ),
@@ -335,6 +449,7 @@ class _SearchBarPageState extends State<SearchBarPage> {
       ),
     );
   }
+
   Widget _drawerListTile(
       {required IconData icon,
       required String text,
@@ -349,7 +464,7 @@ class _SearchBarPageState extends State<SearchBarPage> {
 
 // Function to show the bottom sheet
 void showFoodDetailsBottomSheet(
-    BuildContext context, Map<String, dynamic> foodItem) {
+    BuildContext context, Map<String, dynamic> foodItem, bool isAvailable) {
   final cartProvider = Provider.of<CartProvider>(context, listen: false);
 
   showModalBottomSheet(
@@ -393,7 +508,7 @@ void showFoodDetailsBottomSheet(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            foodItem['name'],
+                            foodItem['name'].toString().toUpperCase(),
                             style: const TextStyle(
                                 fontSize: 22, fontWeight: FontWeight.bold),
                           ),
@@ -451,25 +566,26 @@ void showFoodDetailsBottomSheet(
                 ),
                 const SizedBox(height: 10),
                 ElevatedButton(
-                  onPressed: () {
-                    // Add to cart
-                    final cartItem = CartItem.fromMap(foodItem);
-                    cartItem.quantity = quantity; // Set quantity
-                    cartProvider.addItem(cartItem);
-                    Navigator.pop(context); // Close the bottom sheet
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                            '${foodItem['name']} added to cart! ($quantity)'),
-                      ),
-                    );
-                  },
-                  child: const Text(
-                    'Add to Cart',
-                    style: TextStyle(color: Colors.black),
+                  onPressed: isAvailable
+                      ? () {
+                          final cartItem = CartItem.fromMap(foodItem);
+                          cartItem.quantity = quantity;
+                          cartProvider.addItem(cartItem);
+                          Navigator.pop(context);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                  '${foodItem['name']} added to cart! ($quantity)'),
+                            ),
+                          );
+                        }
+                      : null,
+                  child: Text(
+                    isAvailable ? 'Add to Cart' : 'Unavailable',
+                    style: const TextStyle(color: Colors.black),
                   ),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.amber,
+                    backgroundColor: isAvailable ? Colors.amber : Colors.grey,
                     padding: const EdgeInsets.symmetric(
                         horizontal: 50, vertical: 12),
                     textStyle: const TextStyle(

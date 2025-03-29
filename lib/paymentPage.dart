@@ -97,7 +97,7 @@ class _PaymentPageState extends State<PaymentPage>
   }
 }
 
-
+var user = FirebaseAuth.instance.currentUser;
   void openCheckout() {
     var options = {
       'key': 'rzp_test_LXZO1v4DgjDFKy',
@@ -105,8 +105,8 @@ class _PaymentPageState extends State<PaymentPage>
       'name': 'Khaogalli',
       'description': 'Payment for your order',
       'prefill': {
-        'contact': '8451021209',
-        'email': 'ankitratnani@gmail.com',
+        'contact':user!.phoneNumber,
+        'email': user!.email,
       },
       'external': {
         'wallets': ['paytm']
@@ -122,6 +122,14 @@ class _PaymentPageState extends State<PaymentPage>
 
   void _handlePaymentSuccess(PaymentSuccessResponse response) async {
   try {
+    
+
+    // Place the order after successful payment
+    String? newOrderId = await placeOrderWithCustomId(
+        widget.items,
+        widget.totalAmount,
+      );
+
     // Record payment details in Firestore
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
@@ -129,18 +137,12 @@ class _PaymentPageState extends State<PaymentPage>
       await doc.set({
         'id': doc.id,
         'userId': user.uid,
+        'orderId' : newOrderId,
         'paymentId': response.paymentId,
         'amount': widget.totalAmount,
         'status': 'successful',
         'timestamp': FieldValue.serverTimestamp(),
       });
-
-      // Place the order after successful payment
-      String? newOrderId = await placeOrderWithCustomId(
-        widget.items,
-        widget.totalAmount,
-      );
-
       if (newOrderId != null) {
         // Clear the cart
         widget.clearCartCallback();

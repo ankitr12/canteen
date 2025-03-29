@@ -18,15 +18,15 @@ class CartProvider with ChangeNotifier {
 
   // Add item to cart or increase quantity if it already exists
   void addItem(CartItem newItem) {
-    // Check if the item already exists in the cart
+    
     final existingItemIndex =
         _items.indexWhere((item) => item.name == newItem.name);
 
     if (existingItemIndex >= 0) {
-      // If the item exists, update its quantity
+      
       _items[existingItemIndex].quantity += newItem.quantity;
     } else {
-      // If the item doesn't exist, add it to the cart
+     
       _items.add(newItem);
     }
     notifyListeners();

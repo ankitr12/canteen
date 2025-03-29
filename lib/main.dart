@@ -1,8 +1,5 @@
-import 'package:canteen_fbdb/loginPage.dart';
 import 'package:canteen_fbdb/provider/cartProvider.dart';
-import 'package:canteen_fbdb/wrapper.dart';
-// import 'package:canteen_fbdb/menuPage.dart';
-// import 'package:canteen_fbdb/registerPage.dart';
+import 'package:canteen_fbdb/splashPage.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -26,7 +23,8 @@ class MainApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return  MaterialApp(
-      home: Wrapper()
+      debugShowCheckedModeBanner: false,
+      home: SplashPage()
     );
   }
 }

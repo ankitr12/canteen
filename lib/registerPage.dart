@@ -19,9 +19,19 @@ class _SignupPageState extends State<SignupPage> {
   final TextEditingController _confirmPasswordController =
       TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _usernameController = TextEditingController();
 
   bool _isLoading = false;
   String? _errorMessage;
+
+  // Check if the username is unique
+  Future<bool> _isUsernameUnique(String username) async {
+    final querySnapshot = await _firestore
+        .collection('users')
+        .where('username', isEqualTo: username)
+        .get();
+    return querySnapshot.docs.isEmpty;
+  }
 
   Future<void> _signupUser() async {
     if (_formKey.currentState!.validate()) {
@@ -31,6 +41,17 @@ class _SignupPageState extends State<SignupPage> {
       });
 
       try {
+        final username = _usernameController.text.trim();
+
+        // Check if the username is unique
+        final isUnique = await _isUsernameUnique(username);
+        if (!isUnique) {
+          setState(() {
+            _errorMessage = 'Username already exists. Please choose another.';
+          });
+          return;
+        }
+
         // Create user with Firebase Authentication
         UserCredential userCredential =
             await _auth.createUserWithEmailAndPassword(
@@ -38,11 +59,14 @@ class _SignupPageState extends State<SignupPage> {
           password: _passwordController.text.trim(),
         );
 
-        // Save user details in Firestore
+        // Save user details in Firestore with username as the document ID
         await _firestore.collection('users').doc(userCredential.user!.uid).set({
           'name': _nameController.text.trim(),
           'email': _emailController.text.trim(),
           'phone': _phoneController.text.trim(),
+          'password': _passwordController.text.trim(),
+          'username': username,
+          'isBlocked': false,
         });
 
         // Navigate to LoginPage
@@ -58,6 +82,10 @@ class _SignupPageState extends State<SignupPage> {
       } on FirebaseAuthException catch (e) {
         setState(() {
           _errorMessage = e.message;
+        });
+      } catch (e) {
+        setState(() {
+          _errorMessage = 'An unexpected error occurred.';
         });
       } finally {
         setState(() {
@@ -77,12 +105,12 @@ class _SignupPageState extends State<SignupPage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Logo or Header
               Hero(
                 tag: 'logo',
                 child: CircleAvatar(
                   radius: 50,
-                  backgroundImage: AssetImage('D:/flutter workspace/canteen_fbdb/lib/assets/logo.png'), // Add your logo
+                  backgroundImage: AssetImage(
+                      'D:/flutter workspace/canteen_fbdb/lib/assets/logo.png'),
                 ),
               ),
               const SizedBox(height: 20),
@@ -128,12 +156,40 @@ class _SignupPageState extends State<SignupPage> {
                             if (value == null || value.isEmpty) {
                               return 'Please enter your name';
                             }
+                            if (RegExp(r'[0-9]').hasMatch(value)) {
+                              return 'Name should not contain numbers';
+                            }
                             return null;
                           },
                         ),
                         const SizedBox(height: 15),
                         TextFormField(
                           maxLength: 20,
+                          controller: _usernameController,
+                          decoration: InputDecoration(
+                            hintText: 'Enter your username',
+                            labelText: 'Username',
+                            prefixIcon: Icon(Icons.person_outline),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter a username';
+                            }
+                            if (value.length < 4) {
+                              return 'Username must be at least 4 characters';
+                            }
+                            if (RegExp(r'^[0-9]+$').hasMatch(value)) {
+                              return 'Username cannot contain only numbers';
+                            }
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 15),
+                        TextFormField(
+                          maxLength: 30,
                           controller: _emailController,
                           decoration: InputDecoration(
                             hintText: 'Enter your email',
@@ -151,6 +207,10 @@ class _SignupPageState extends State<SignupPage> {
                             if (!RegExp(r'^[^@]+@[^@]+\.[^@]+')
                                 .hasMatch(value)) {
                               return 'Enter a valid email address';
+                            }
+                            if (RegExp(r'^[0-9]+$')
+                                .hasMatch(value.split('@')[0])) {
+                              return 'Email should not contain only numbers';
                             }
                             return null;
                           },
@@ -197,6 +257,9 @@ class _SignupPageState extends State<SignupPage> {
                             }
                             if (value.length < 6) {
                               return 'Password must be at least 6 characters';
+                            }
+                            if (RegExp(r'^[0-9]+$').hasMatch(value)) {
+                              return 'Password cannot contain only numbers';
                             }
                             return null;
                           },
@@ -248,39 +311,42 @@ class _SignupPageState extends State<SignupPage> {
                                 ),
                                 child: const Text(
                                   'Sign Up',
-                                  style: TextStyle(fontSize: 18, color: Colors.amber),
+                                  style: TextStyle(
+                                      fontSize: 18, color: Colors.amber),
                                 ),
                               ),
+                        const SizedBox(height: 20),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => LoginPage()),
+                            );
+                          },
+                          child: RichText(
+                            text: TextSpan(
+                              text: 'Already have an account? ',
+                              style: TextStyle(color: Colors.blueGrey),
+                              children: [
+                                TextSpan(
+                                  text: 'Login',
+                                  style: TextStyle(
+                                    color: Colors.amber,
+                                    backgroundColor: Colors.grey.shade200,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
                 ),
               ),
               const SizedBox(height: 20),
-              GestureDetector(
-                onTap: () {
-                  Navigator.pushReplacement(
-                    context,
-                    MaterialPageRoute(builder: (context) => LoginPage()),
-                  );
-                },
-                child: RichText(
-                  text: TextSpan(
-                    text: 'Already have an account? ',
-                    style: TextStyle(color: Colors.blueGrey),
-                    children: [
-                      TextSpan(
-                        text: 'Login',
-                        style: TextStyle(
-                          color: Colors.amber,
-                          backgroundColor: Colors.grey.shade200,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
             ],
           ),
         ),

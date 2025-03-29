@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:canteen_fbdb/HomePage.dart';
@@ -11,8 +12,7 @@ class LoginPage extends StatefulWidget {
   State<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage>
-    with SingleTickerProviderStateMixin {
+class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   String? _errorMessage;
@@ -23,22 +23,40 @@ class _LoginPageState extends State<LoginPage>
       _isLoading = true;
       _errorMessage = null;
     });
+
     try {
       final userCredential =
           await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
+
       if (userCredential.user != null) {
-        Navigator.pushReplacement(
-          context,
-          PageRouteBuilder(
-            pageBuilder: (_, __, ___) => HomePage(),
-            transitionsBuilder: (_, animation, __, child) {
-              return FadeTransition(opacity: animation, child: child);
-            },
-          ),
-        );
+        // Check if the user is blocked in Firestore
+        DocumentSnapshot userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userCredential.user!.uid)
+            .get();
+
+        if (userDoc.exists && userDoc['isBlocked'] == true) {
+          // User is blocked, sign out and show error message
+          await FirebaseAuth.instance.signOut();
+          setState(() {
+            _errorMessage =
+                "You have been blocked by the admin for going against our guidelines";
+          });
+        } else {
+          // User is not blocked, proceed to HomePage
+          Navigator.pushReplacement(
+            context,
+            PageRouteBuilder(
+              pageBuilder: (_, __, ___) => HomePage(),
+              transitionsBuilder: (_, animation, __, child) {
+                return FadeTransition(opacity: animation, child: child);
+              },
+            ),
+          );
+        }
       }
     } on FirebaseAuthException catch (e) {
       setState(() {
@@ -62,13 +80,13 @@ class _LoginPageState extends State<LoginPage>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Logo
+                
                 Hero(
                   tag: 'logo',
                   child: CircleAvatar(
                     radius: 50,
                     backgroundImage: AssetImage(
-                        'D:/flutter workspace/canteen_fbdb/lib/assets/logo.png'), // Add your logo here
+                        'D:/flutter workspace/canteen_fbdb/lib/assets/logo.png'),
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -145,7 +163,8 @@ class _LoginPageState extends State<LoginPage>
                                 ),
                                 child: const Text(
                                   'Login',
-                                  style: TextStyle(fontSize: 18, color: Colors.amber),
+                                  style: TextStyle(
+                                      fontSize: 18, color: Colors.amber),
                                 ),
                               ),
                         const SizedBox(height: 10),
@@ -182,7 +201,7 @@ class _LoginPageState extends State<LoginPage>
                           style: TextStyle(
                             color: Colors.amber,
                             fontWeight: FontWeight.bold,
-                            backgroundColor: Colors.grey.shade200 
+                            backgroundColor: Colors.grey.shade200,
                           ),
                         ),
                       ],

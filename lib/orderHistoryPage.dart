@@ -1,4 +1,6 @@
-import 'package:canteen_fbdb/orderTrackingPage.dart';
+import 'package:canteen_fbdb/AllOrderHistory.dart';
+import 'package:canteen_fbdb/orderAfterTracking.dart';
+//import 'package:canteen_fbdb/orderTrackingPage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -18,6 +20,7 @@ class OrderHistoryPage extends StatelessWidget {
         .collection('orders')
         .where('userId', isEqualTo: user.uid)
         .orderBy('orderDate', descending: true)
+        .limit(5)
         .snapshots()
         .map((snapshot) => snapshot.docs
             .map((doc) => doc.data() as Map<String, dynamic>)
@@ -36,6 +39,14 @@ class OrderHistoryPage extends StatelessWidget {
         ),
         centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.black),
+        actions:[
+          Text("view all"),
+          IconButton(
+            onPressed: (){
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const DailyOrderHistoryPage()));
+            },
+            icon: Icon(Icons.arrow_forward_ios_sharp))
+        ],
       ),
       body: StreamBuilder<List<Map<String, dynamic>>>(
         stream: getOrderHistory(),
@@ -155,7 +166,7 @@ class OrderHistoryPage extends StatelessWidget {
                                 Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                        builder: (context) => OrderTrackingPage(
+                                        builder: (context) => OrderAfterTrackingPage(
                                             orderId: order['id'])));
                               },
                               child: Text(

@@ -107,9 +107,16 @@ class CartPage extends StatelessWidget {
                               cartProvider.removeItem(item);
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
-                                  content:
-                                      Text('${item.name} removed from cart!'),
+                                duration: Duration(seconds: 1),
+                                content: Text(
+                                    '${item.name} removed from the cart!'),
+                                margin: EdgeInsets.only(
+                                  bottom: MediaQuery.of(context).size.height - 820, // Adjust this value as needed
+                                  left: 10,
+                                  right: 10,
                                 ),
+                                behavior: SnackBarBehavior.floating,
+                              ),
                               );
                             },
                             background: Container(
@@ -218,14 +225,12 @@ class CartPage extends StatelessWidget {
                                     top: Radius.circular(50)),
                               ),
                               builder: (context) => SizedBox(
-                                height:
-                                    MediaQuery.of(context).size.height * 0.25,
+                                height:MediaQuery.of(context).size.height * 0.25,
                                 width: MediaQuery.of(context).size.width,
                                 child: PaymentPage(
                                   totalAmount: totalAmount,
-                                  items: items, // Pass items here
-                                  clearCartCallback: cartProvider
-                                      .clearCart, // Pass callback to clear cart
+                                  items: items, 
+                                  clearCartCallback: cartProvider.clearCart, 
                                 ),
                               ),
                             );
@@ -249,8 +254,7 @@ class CartPage extends StatelessWidget {
   void _showFoodDetailsBottomSheet(
       BuildContext context, Map<String, dynamic> foodItem) {
     final cartProvider = Provider.of<CartProvider>(context, listen: false);
-    final existingItemIndex =
-        cartProvider.items.indexWhere((item) => item.name == foodItem['name']);
+    final existingItemIndex =cartProvider.items.indexWhere((item) => item.name == foodItem['name']);
     int initialQuantity = existingItemIndex >= 0
         ? cartProvider.items[existingItemIndex].quantity
         : 1;
@@ -343,9 +347,16 @@ class CartPage extends StatelessWidget {
 
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(
-                              '${foodItem['name']} updated in cart! ($quantity)'),
-                        ),
+                                duration: Duration(seconds: 1),
+                                content: Text(
+                                    '${foodItem['name']} updated to cart! ($quantity)'),
+                                margin: EdgeInsets.only(
+                                  bottom: MediaQuery.of(context).size.height - 820, // Adjust this value as needed
+                                  left: 10,
+                                  right: 10,
+                                ),
+                                behavior: SnackBarBehavior.floating,
+                              ),
                       );
                     },
                     child: const Text(

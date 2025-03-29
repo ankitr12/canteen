@@ -1,6 +1,4 @@
 import 'package:canteen_fbdb/CartPage.dart';
-import 'package:canteen_fbdb/foodItem_card.dart';
-import 'package:canteen_fbdb/itemDetails.dart';
 import 'package:provider/provider.dart';
 import 'package:canteen_fbdb/provider/cartProvider.dart';
 import 'package:canteen_fbdb/models/cart_items.dart';
@@ -135,8 +133,9 @@ class _CategoryPageState extends State<CategoryPage> {
       itemCount: dishes.length,
       itemBuilder: (context, index) {
         final dish = dishes[index];
+        final bool isAvailable = dish['available'] ?? true;
         return GestureDetector(
-          onTap: () => _showFoodDetailsBottomSheet(context, dish),
+          onTap: () => _showFoodDetailsBottomSheet(context, dish, isAvailable),
           child: Card(
             margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             elevation: 4,
@@ -158,6 +157,8 @@ class _CategoryPageState extends State<CategoryPage> {
                     dish['url'],
                     width: 100,
                     height: 100,
+                    color: isAvailable ? null : Colors.grey,
+                    colorBlendMode: isAvailable ? null : BlendMode.saturation,
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -196,7 +197,7 @@ class _CategoryPageState extends State<CategoryPage> {
   }
 
   void _showFoodDetailsBottomSheet(
-      BuildContext context, Map<String, dynamic> foodItem) {
+      BuildContext context, Map<String, dynamic> foodItem,bool isAvailable) {
     final cartProvider = Provider.of<CartProvider>(context, listen: false);
 
     showModalBottomSheet(
@@ -287,21 +288,34 @@ class _CategoryPageState extends State<CategoryPage> {
                   ),
                   const SizedBox(height: 10),
                   ElevatedButton(
-                    onPressed: () {
-                      final cartItem = CartItem.fromMap(foodItem);
-                      cartItem.quantity = quantity;
-                      cartProvider.addItem(cartItem);
-                      Navigator.pop(context);
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                              '${foodItem['name']} added to cart! ($quantity)'),
-                        ),
-                      );
-                    },
-                    child: const Text('Add to Cart',style: TextStyle(color: Colors.black),),
+                    onPressed: isAvailable
+                        ? () {
+                            final cartItem = CartItem.fromMap(foodItem);
+                            cartItem.quantity = quantity;
+                            cartProvider.addItem(cartItem);
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                duration: Duration(seconds: 1),
+                                content: Text(
+                                    '${foodItem['name']} added to cart! ($quantity)'),
+                                margin: EdgeInsets.only(
+                                  bottom: MediaQuery.of(context).size.height - 820, // Adjust this value as needed
+                                  left: 10,
+                                  right: 10,
+                                ),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
+                          }
+                        : null,
+                    child: Text(
+                      isAvailable ? 'Add to Cart' : 'Unavailable',
+                      style: const TextStyle(color: Colors.black),
+                    ),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.amber,
+                      backgroundColor:
+                          isAvailable ? Colors.amber : Colors.grey,
                       padding: const EdgeInsets.symmetric(
                           horizontal: 50, vertical: 12),
                       textStyle: const TextStyle(

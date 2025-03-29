@@ -79,10 +79,6 @@ class _UpdateDetailsPageState extends State<UpdateDetailsPage>
         final user = _auth.currentUser;
 
         if (user != null) {
-          // Update Firebase Auth Email
-          if (_emailController.text != user.email) {
-            await user.updateEmail(_emailController.text);
-          }
 
           // Update Firestore User Details
           await _firestore.collection('users').doc(user.uid).update({

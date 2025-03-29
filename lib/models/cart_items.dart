@@ -1,16 +1,16 @@
 class CartItem {
   final String name;
   final double price;
-  final String url; // Added field
-  final String description; // Added field
+  final String url; 
+  final String description;
   int quantity;
   String? customization;
 
   CartItem({
     required this.name,
     required this.price,
-    required this.url, // Initialize field
-    required this.description, // Initialize field
+    required this.url, 
+    required this.description, 
     this.quantity = 1,
     this.customization,
   });
@@ -19,8 +19,8 @@ class CartItem {
     return CartItem(
       name: data['name'],
       price: data['price'].toDouble(),
-      url: data['url'] ?? '', // Handle missing data
-      description: data['description'] ?? '', // Handle missing data
+      url: data['url'] ?? '', 
+      description: data['description'] ?? '', 
       quantity: data['quantity'] ?? 1,
       customization: data['customization'],
     );
@@ -30,8 +30,8 @@ class CartItem {
     return {
       'name': name,
       'price': price,
-      'url': url, // Add field
-      'description': description, // Add field
+      'url': url, 
+      'description': description, 
       'quantity': quantity,
       'customization': customization,
     };

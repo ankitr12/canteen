@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -68,6 +69,10 @@ class _ChangePasswordPageState extends State<ChangePasswordPage>
               backgroundColor: Colors.green,
             ),
           );
+
+          await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+            'password': _newPasswordController.text
+            });
 
           // Navigate back or close the page
           Navigator.pop(context);
