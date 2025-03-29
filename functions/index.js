@@ -27,7 +27,7 @@ sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 
 // Replace with your actual SendGrid API Key
-const SENDGRID_API_KEY = "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";
+//const SENDGRID_API_KEY = "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";
 sgMail.setApiKey(SENDGRID_API_KEY);
 
 exports.sendOtp = functions.https.onCall(async (data, context) => {
