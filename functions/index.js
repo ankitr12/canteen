@@ -23,6 +23,8 @@ const admin = require("firebase-admin");
 const sgMail = require("@sendgrid/mail");
 
 admin.initializeApp();
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
 
 // Replace with your actual SendGrid API Key
 const SENDGRID_API_KEY = "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";

@@ -20,6 +20,11 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage>
   String? generatedOtp;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  
+   final sendGrid_key = FirebaseFirestore.instance.collection('api_keys')
+  .doc('sendgrid').get().then((value) {
+    return value.get('key_value');
+    }).toString();
 
   @override
   void initState() {
@@ -121,7 +126,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage>
 
   Future<bool> _sendEmail(String email, String otp) async {
     const String apiUrl = "https://api.sendgrid.com/v3/mail/send";
-    const String apiKey = "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";
+    final String apiKey = sendGrid_key;
 
     final response = await http.post(
       Uri.parse(apiUrl),
@@ -247,6 +252,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage>
                       ),
                     ),
                   ),
+                  //ElevatedButton(onPressed:(){ print(sendGrid_key);}, child: Text("print_key"))   debug statement
               ],
             ),
           ),
